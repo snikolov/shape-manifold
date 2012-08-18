@@ -1,0 +1,88 @@
+\documentclass[anon]{9520} % Anonymized submission
+% \documentclass{colt2012} % Include author names
+
+% The following packages will be automatically loaded:
+% amsmath, amssymb, natbib, graphicx, url, algorithm2e
+
+\title[Short Title]{Full Title of Article}
+
+ % Use \Name{Author Name} to specify the name.
+ % If the surname contains spaces, enclose the surname
+ % in braces, e.g. \Name{John {Smith Jones}} similarly
+ % if the name has a "von" part, e.g \Name{Jane {de Winter}}.
+ % If the first letter in the forenames is a diacritic
+ % enclose the diacritic in braces, e.g. \Name{{\'E}louise Smith}
+
+ % Two authors with the same address
+  % \coltauthor{\Name{Author Name1} \Email{abc@sample.com}\and
+  %  \Name{Author Name2} \Email{xyz@sample.com}\\
+  %  \addr Address}
+
+ % Three or more authors with the same address:
+ % \coltauthor{\Name{Author Name1} \Email{an1@sample.com}\\
+ %  \Name{Author Name2} \Email{an2@sample.com}\\
+ %  \Name{Author Name3} \Email{an3@sample.com}\\
+ %  \addr Address}
+
+
+ % Authors with different addresses:
+ \author{\Name{Author Name1} \Email{abc@sample.com}\\
+ \addr Address 1
+ \AND
+ \Name{Author Name2} \Email{xyz@sample.com}\\
+ \addr Address 2
+ }
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This is a great paper and it has a concise abstract.
+\end{abstract}
+
+\begin{keywords}
+List of keywords
+\end{keywords}
+
+\section{Problems Statement}
+
+This is where the content of your paper goes.  Remember to:
+\begin{itemize}
+\item Limit the main text (without bibliography and appendices) to 12 pages.
+\item Include, either in the main text or the appendices, all proofs
+  and derivations required to substantiate the results.
+\item Include {\em in the main text} enough details, including proof
+  details, to convince the reviewers of the submissions' merits.
+\item Not include author names (this is done automatically), and to
+  the extent possible, avoid directly identifying the authors.  You
+  should still include all relevant references, including your own,
+  and any other relevant discussion, even if this might allow a
+  reviewer to infer the author identities.
+\end{itemize}
+\newpage
+
+\section{Previous Work}
+
+\section{Results}
+
+\subsection{}
+
+
+\acks{We thank a bunch of people.} 
+
+
+\bibliography{yourbibfile}
+
+
+\appendix
+
+\section{My Proof of Theorem 1}
+
+This is a boring technical proof.
+
+\section{My Proof of Theorem 2}
+
+This is a complete version of a proof sketched in the main text.
+
+\end{document}

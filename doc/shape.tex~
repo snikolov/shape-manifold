@@ -1,0 +1,434 @@
+\documentclass[anon,11pt]{9520} % Anonymized submission
+% \documentclass{colt2012} % Include author names
+
+% The following packages will be automatically loaded:
+% amsmath, amssymb, natbib, graphicx, url, algorithm2e
+
+\newcommand{\mb}{\mathbf}
+
+\usepackage{multirow,graphicx}
+
+\title[Shape Classication]{Shape Classification With Manifold Regularization}
+
+ % Use \Name{Author Name} to specify the name.
+ % If the surname contains spaces, enclose the surname
+ % in braces, e.g. \Name{John {Smith Jones}} similarly
+ % if the name has a "von" part, e.g \Name{Jane {de Winter}}.
+ % If the first letter in the forenames is a diacritic
+ % enclose the diacritic in braces, e.g. \Name{{\'E}louise Smith}
+
+ % Two authors with the same address
+  % \coltauthor{\Name{Author Name1} \Email{abc@sample.com}\and
+  %  \Name{Author Name2} \Email{xyz@sample.com}\\
+  %  \addr Address}
+
+ % Three or more authors with the same address:
+ % \coltauthor{\Name{Author Name1} \Email{an1@sample.com}\\
+ %  \Name{Author Name2} \Email{an2@sample.com}\\
+ %  \Name{Author Name3} \Email{an3@sample.com}\\
+ %  \addr Address}
+
+
+ % Authors with different addresses:
+ \author{\Name{Stanislav Nikolov} \Email{snikolov@mit.edu}\\
+ }
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We apply inductive and transductive methods based on manifold regularization and regularized least squares to the problem of shape classification, and analyze their behavior. In the transductive case (Graph Regularization), we show that regularization improves robustness to noisy labels. 
+
+In the inductive case (Manifold Regularization), we show that the encouraging function smoothness on the manifold improves classification. 
+
+In both cases, we find that classification performance is sensitive to the scaling of the graph weights, but a good scaling is typically on the order of magnitude of the average distance between points.
+
+We find that Signed Distance Functions are generally better features than raw pixels, especially for imbalanced datasets.
+
+In addition, we observe that classification performance degrades for imbalanced datasets, and demonstrate that performance improves when we subsample the dominant class. 
+
+Finally, we compare Graph Regularization and Manifold Learning to the much simpler inductive and transductive k-Nearest-Neighbors.
+(and how did they compare?)
+\end{abstract}
+
+\begin{keywords}
+Shape classification, manifold regularization, graph regularization.
+\end{keywords}
+
+\section{Introduction}
+
+% Shape classification is important
+In many object recognition and classification tasks, the shape of an object is more important than its other qualities, such as color or texture. Consider trying to classify images of bottles and cups. The bottles and cups themselves might have all kinds of colors and textures, in addition to noise and variation in background and lighting. In comparison, silhouettes of cups and bottles have fewer, albeit more important degrees of freedom. Shape classification has many applications. Crowdsourced image annotation tools such as LabelMe \cite{LabelMe} are generating hundreds of thousands of labeled shapes from segmentions of everyday scenes, making it as feasible as ever to learn models for everyday shapes and exploit them to do object recognition in complex scenes. In the field of biomedical imaging, better classification on shapes segmented from biomedical imaging data could help with early detection and diagnosis of disease.
+
+% Manifold
+Recently, geometric frameworks for learning such as manifold learning and manifold regularization \cite{people} have become a popular approach to image and shape classification \cite{people}. While the raw pixels of an image form a feature vector in a high-dimensional space, images are assumed to lie close to a low-dimensional submanifold embedded in the high-dimensional ambient space. Roughly, the low dimension of the manifold corresponds to a low number of latent degrees of freedom in the set of images.  
+
+% As a proxy for geometry-exploiting algorithms
+We chose to study shape classification as a proxy for studying the behavior of geometry-aware learning algorithms on more complex datasets, such as real-world images. Although real-world images have many more degrees of freedom than silhouettes, both have relatively few latent degrees of freedom and can be assumed to lie on a low dimensional submanifold embedded in the ambient space.
+
+% As a way to handle actual segmented binary images
+
+\subsection{The Manifold Assumption}
+
+% Talk about points being generated from a manifold, etc.
+
+% Plot of points with images overlaid.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=5in]{fig/img_overlay}
+\end{center}
+\end{figure}
+
+\subsection{Semi-supervised Learning and Manifold Regularization}
+In a semi-supervised learning setting, there is a set of $n$ points $\{\mb x_i\}_{i=1,\dots,n}$, of which the first $\ell$ have labels $\{y_i\}_{i=1,\dots,\ell}$ and the remaining $u=n-\ell$ are unlabeled. The goal is to learn a function $f$ that predicts the label of an arbitrary (potentially unobserved) point. In a fully-supervised learning setting, one would use only the labeled points to learn $f$. Regularized Least Squares (RLS), for example, attempts to learn $f$ by minimizing the regularized squared loss \[\frac{1}{\ell}\sum_{i=1}^{\ell} (f(\mb{x}_i)-y_i)^2 + \lambda_A \|f\|_{\mathcal{H}}^2\] which can be written as \[ \frac{1}{\ell}\|\mb{K}\mb{c} - \mb{y}\|_2^2  + \lambda_A \mb{c}^T \mb{K} \mb{c} \] using the kernel matrix $\mb{K}$ and coefficients $\mb{c}$ given by the Representer Theorem.
+
+Manifold learning uses the unlabeled points in addition to the labeled points in order to exploit the geometry of the data. \cite{Belkin} Namely, it exploits the idea that $f$ should not vary drastically in regions of high density. This idea is captured formally by defining an intrinsic smoothness penalty on $f$ \[\|f\|^2_{I} = \int_{\mathcal{M}} \|\nabla_{\mathcal{M}} f(x)\|^2 dp(\mb x) = \int\Delta_{\mathcal{M}}f dp(\mb x), \] where $\nabla_{\mathcal{M}}$ and $\Delta_{\mathcal{M}}$ are the gradient and Laplacian of $f$ on the manifold, respectively. This gives rise to Laplacian Regularized Least Squares (LapRLS) where one minimizes \[ \frac{1}{\ell} \sum_{i=1}^{\ell} (f(\mb{x}_i)-y_i)^2 + \lambda_A \|f\|_{\mathcal{H}}^2 + \lambda_I\|f\|_I.\] Furthermore, one can approximate the intrinsic smoothness penalty using only the observed points by using a graph Laplacian instead of the manifold Laplacian: $\mb x_1, \dots, \mb x_n$: \[\|f\|^2_I \approx \frac{1}{2n^2} \sum_{i=1}^{n} \sum_{j=1}^{n} W_{i,j}(f_i-f_j)^2 = \mb f^T \mb L \mb f.\] Here \[W_{i,j} = e^{-\frac{\|\mb{x}_i-\mb{x}_j\|^2}{2\sigma^2}}\] are similarity weights for some scale parameter $\sigma$ and $\mb L$ is the graph Laplacian of the graph defined by the $W_{i,j}$s. Manifold regularization has its own representer theorem, which allows us to write the objective as
+\[ \frac{1}{\ell} \|\mb J(\mb K \mb c-\mb y')\|^2 + \lambda_A \mb c^T \mb K \mb c + \frac{1}{n^2} \mb c^T \mb K \mb L \mb K \mb c \]
+
+\subsection{Class Imbalance}
+Often, datasets do not have an equal number of positive and negative examples. This situation, known as {\em class imbalance} makes the dominant class more likely to be predicted, as examples from the dominant examples stand to accumulate greater loss because of their greater number. This is typically resolved by assigning a weight $\gamma_i$ to each point $\mb x_i$, which in our case leads to a weighted LapRLS objective
+\[ \frac{1}{\ell} \|\mb J \mb \Gamma(\mb K \mb c-\mb y')\|^2 + \lambda_A \mb c^T \mb K \mb c + \frac{1}{n^2} \mb c^T \mb K \mb L \mb K \mb c,\] where $\mb \Gamma$ is a diagonal matrix with weights $\gamma_1,\dots,\gamma_{\ell}$ as its first $\ell$ entries and zeros as its remaining $u$ entries. See \cite{Weiss} (G. Weiss. Mining with rarity: A unifying framework.SIGKDD Explorations, 6(1):7-19) and \cite{Kotsiantis} (Handling imbalanced datasets: A review Sotiris Kotsiantis, Dimitris Kanellopoulos, Panayiotis Pintelas)
+2004.
+
+\subsection{Graph Regularization}
+Manifold regularization takes in a set of $n$ points $\{\mb x_i\}_{i=1,\dots,n}$, of which the first $\ell$ of have labels $\{y_i\}_{i=1,\dots,\ell}$ and the remaining $u=n-\ell$ are unlabeled predicts the labels of the unlabeled points. Unlike manifold regularization, graph regularization predicts only the labels of the given points, rather than learning a function that predicts the labels of arbitrary points.
+
+Like LapRLS in the previous section, we can formulate this label prediction task as a convex optimization problem. Here, the $W_{i,j}$ are interpreted as similarities between points with having a manifold in mind, and our goal is to get similar points to have similar labels. We would then like to minimize \[\frac{1}{2} \sum_{i=1}^{n} \sum_{j=1}^{n} W_{i,j}(f_i-f_j)^2\] subject to \[f_i=y_i, i=1,\dots,\ell\] where $f_i$ is the predicted label of point $i$. Like in manifold regularization, $W_{i,j}$ are interpreted as the weights of a graph and we can write the objective in terms of the graph Laplacian as \[\frac{1}{2} \sum_{i=1}^{n} \sum_{j=1}^{n} W_{i,j}(f_i-f_j)^2 = \mb{f}^T \mb{L} \mb{f},\] where $\mb{f}$ is the vector of $n$ predicted labels. We can further remove the constraint that the predicted labels of the first $\ell$ points have to match the original labels by making the objective \[\mb{f}^T\mb{L}\mb{f} + \lambda\|\mb{J}(\mb{f}-\mb{y'})\|^2,\] which penalizes deviations of the predicted labels from the actual labels. Here, $\mb{J}$ is a diagonal matrix with $\ell$ ones followed by $u$ zeros and $\mb{y'}$ is a vector with $\mb{y}$ as its first $\ell$ entries followed by $u$ zeros.
+
+\section{Previous Work}
+
+\section{Results}
+
+\subsection{Experiments \& Evaluation}
+
+In both graph regularization and manifold regularization, there are parameters to optimize. In graph regularization, we have a regularization parameter $\lambda$ and a scale parameter $\sigma$.
+
+\subsection{Graph Regularization}
+
+\subsection{Manifold Regularization}
+
+
+\begin{table}
+\scriptsize
+
+\begin{center}
+\begin{tabular}{l|l|l|cc|cc|cc|}
+& & & \multicolumn{6}{c}{Results} \\ 
+  & & & \multicolumn{2}{|c|}{$\sigma=0.1625 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.2750 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.3875 \bar{d}$}\\ 
+& & & RLS & LapRLS & RLS. & LapRLS & RLS & LapRLS\\ \hline 
+
+\multirow{4}{*}{butterflies vs. crabs}
+% errors: butterflies|crabs feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.80$\pm$0.06& 0.80$\pm$0.07& 0.80$\pm$0.06& 0.80$\pm$0.07& 0.80$\pm$0.06& 0.80$\pm$0.07\\ 
+% F1s: butterflies|crabs feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.50$\pm$0.17& 0.43$\pm$0.06& 0.50$\pm$0.17& 0.43$\pm$0.06& 0.50$\pm$0.17& 0.43$\pm$0.06\\ \cline{2-9} 
+
+% errors: butterflies|crabs feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.85$\pm$0.07& 0.86$\pm$0.08& 0.85$\pm$0.07& 0.86$\pm$0.08& 0.85$\pm$0.07& 0.86$\pm$0.08\\ 
+% F1s: butterflies|crabs feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.61$\pm$0.10& 0.57$\pm$0.14& 0.61$\pm$0.10& 0.57$\pm$0.14& 0.61$\pm$0.10& 0.59$\pm$0.13\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. fish}
+% errors: butterflies|fish feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.92$\pm$0.04& 0.90$\pm$0.03& 0.92$\pm$0.04& 0.90$\pm$0.03& 0.92$\pm$0.04& 0.90$\pm$0.03\\ 
+% F1s: butterflies|fish feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.86$\pm$0.07& 0.87$\pm$0.03& 0.86$\pm$0.07& 0.87$\pm$0.03& 0.86$\pm$0.07& 0.86$\pm$0.03\\ \cline{2-9} 
+
+% errors: butterflies|fish feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02\\ 
+% F1s: butterflies|fish feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.87$\pm$0.05& 0.88$\pm$0.02& 0.87$\pm$0.05& 0.88$\pm$0.02& 0.87$\pm$0.05& 0.88$\pm$0.02\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. heads}
+% errors: butterflies|heads feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00\\ 
+% F1s: butterflies|heads feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.98$\pm$0.03& 0.98$\pm$0.02& 0.98$\pm$0.03& 0.98$\pm$0.02& 0.98$\pm$0.03& 0.98$\pm$0.02\\ \cline{2-9} 
+
+% errors: butterflies|heads feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.01& 1.00$\pm$0.00& 0.99$\pm$0.01& 1.00$\pm$0.00& 0.99$\pm$0.01& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. fish}
+% errors: crabs|fish feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.71$\pm$0.15& 0.80$\pm$0.06& 0.71$\pm$0.15& 0.80$\pm$0.06& 0.71$\pm$0.15& 0.80$\pm$0.06\\ 
+% F1s: crabs|fish feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.51$\pm$0.08& 0.50$\pm$0.07& 0.51$\pm$0.08& 0.50$\pm$0.07& 0.51$\pm$0.08& 0.50$\pm$0.07\\ \cline{2-9} 
+
+% errors: crabs|fish feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.68$\pm$0.18& 0.80$\pm$0.06& 0.68$\pm$0.18& 0.80$\pm$0.06& 0.68$\pm$0.18& 0.80$\pm$0.06\\ 
+% F1s: crabs|fish feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.53$\pm$0.16& 0.60$\pm$0.07& 0.53$\pm$0.16& 0.60$\pm$0.07& 0.53$\pm$0.16& 0.60$\pm$0.07\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. heads}
+% errors: crabs|heads feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02\\ 
+% F1s: crabs|heads feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.64$\pm$0.04& 0.63$\pm$0.09& 0.64$\pm$0.04& 0.64$\pm$0.10& 0.64$\pm$0.04& 0.65$\pm$0.10\\ \cline{2-9} 
+
+% errors: crabs|heads feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.01& 0.93$\pm$0.02& 0.94$\pm$0.01& 0.93$\pm$0.02& 0.94$\pm$0.01& 0.93$\pm$0.02\\ 
+% F1s: crabs|heads feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.79$\pm$0.03& 0.84$\pm$0.04& 0.79$\pm$0.03& 0.84$\pm$0.04& 0.79$\pm$0.03& 0.85$\pm$0.04\\ \cline{2-9} 
+
+\multirow{4}{*}{fish vs. heads}
+% errors: fish|heads feat:image,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.96$\pm$0.03& 0.97$\pm$0.01& 0.96$\pm$0.02& 0.97$\pm$0.01& 0.96$\pm$0.03\\ 
+% F1s: fish|heads feat:image,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.93$\pm$0.03& 0.93$\pm$0.04& 0.93$\pm$0.03& 0.93$\pm$0.04& 0.93$\pm$0.03& 0.94$\pm$0.04\\ \cline{2-9} 
+
+% errors: fish|heads feat:sdf,pf:0.0000,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01\\ 
+% F1s: fish|heads feat:sdf,pf:0.0000,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.93$\pm$0.02& 0.95$\pm$0.01& 0.93$\pm$0.02& 0.95$\pm$0.01& 0.93$\pm$0.02& 0.95$\pm$0.01\\ \cline{2-9} 
+
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\scriptsize
+\begin{center}
+\begin{tabular}{l|l|l|cc|cc|cc|}
+& & & \multicolumn{6}{c}{Results} \\ 
+  & & & \multicolumn{2}{|c|}{$\sigma=0.1625 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.2750 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.3875 \bar{d}$}\\ 
+& & & RLS & LapRLS & RLS. & LapRLS & RLS & LapRLS\\ \hline 
+
+
+
+\multirow{4}{*}{butterflies vs. crabs}
+% errors: butterflies|crabs feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.82$\pm$0.03& 0.84$\pm$0.04& 0.82$\pm$0.03& 0.85$\pm$0.04& 0.82$\pm$0.03& 0.86$\pm$0.04\\ 
+% F1s: butterflies|crabs feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.43$\pm$0.06& 0.43$\pm$0.05& 0.43$\pm$0.06& 0.43$\pm$0.05& 0.43$\pm$0.06& 0.44$\pm$0.05\\ \cline{2-9} 
+
+% errors: butterflies|crabs feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.90$\pm$0.01& 0.91$\pm$0.03& 0.90$\pm$0.01& 0.91$\pm$0.03& 0.90$\pm$0.01& 0.91$\pm$0.02\\ 
+% F1s: butterflies|crabs feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.55$\pm$0.05& 0.67$\pm$0.07& 0.55$\pm$0.05& 0.68$\pm$0.09& 0.55$\pm$0.05& 0.67$\pm$0.09\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. fish}
+% errors: butterflies|fish feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.93$\pm$0.03& 0.92$\pm$0.05& 0.93$\pm$0.03& 0.92$\pm$0.05& 0.93$\pm$0.03& 0.92$\pm$0.05\\ 
+% F1s: butterflies|fish feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.89$\pm$0.04& 0.87$\pm$0.06& 0.89$\pm$0.04& 0.87$\pm$0.06& 0.89$\pm$0.04& 0.87$\pm$0.06\\ \cline{2-9} 
+
+% errors: butterflies|fish feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.02& 0.94$\pm$0.03& 0.94$\pm$0.02& 0.94$\pm$0.03& 0.94$\pm$0.02& 0.94$\pm$0.03\\ 
+% F1s: butterflies|fish feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.90$\pm$0.04& 0.88$\pm$0.06& 0.90$\pm$0.04& 0.89$\pm$0.05& 0.90$\pm$0.04& 0.89$\pm$0.05\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. heads}
+% errors: butterflies|heads feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.00& 1.00$\pm$0.00& 0.99$\pm$0.00& 1.00$\pm$0.00& 0.99$\pm$0.00& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.98$\pm$0.02& 0.98$\pm$0.02& 0.98$\pm$0.02& 0.98$\pm$0.02& 0.98$\pm$0.02& 0.98$\pm$0.02\\ \cline{2-9} 
+
+% errors: butterflies|heads feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01& 0.99$\pm$0.01\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. fish}
+% errors: crabs|fish feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.78$\pm$0.05& 0.82$\pm$0.04& 0.78$\pm$0.05& 0.82$\pm$0.04& 0.78$\pm$0.05& 0.82$\pm$0.04\\ 
+% F1s: crabs|fish feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.50$\pm$0.07& 0.48$\pm$0.04& 0.50$\pm$0.07& 0.48$\pm$0.04& 0.50$\pm$0.07& 0.48$\pm$0.04\\ \cline{2-9} 
+
+% errors: crabs|fish feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.77$\pm$0.09& 0.83$\pm$0.07& 0.77$\pm$0.09& 0.83$\pm$0.07& 0.77$\pm$0.09& 0.83$\pm$0.07\\ 
+% F1s: crabs|fish feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.61$\pm$0.09& 0.60$\pm$0.09& 0.61$\pm$0.09& 0.61$\pm$0.08& 0.61$\pm$0.09& 0.61$\pm$0.09\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. heads}
+% errors: crabs|heads feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.02& 0.94$\pm$0.01& 0.94$\pm$0.02& 0.94$\pm$0.01& 0.94$\pm$0.02& 0.95$\pm$0.01\\ 
+% F1s: crabs|heads feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.62$\pm$0.10& 0.66$\pm$0.07& 0.62$\pm$0.10& 0.66$\pm$0.07& 0.62$\pm$0.10& 0.67$\pm$0.07\\ \cline{2-9} 
+
+% errors: crabs|heads feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01\\ 
+% F1s: crabs|heads feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.79$\pm$0.02& 0.82$\pm$0.03& 0.79$\pm$0.02& 0.83$\pm$0.04& 0.79$\pm$0.02& 0.83$\pm$0.03\\ \cline{2-9} 
+
+\multirow{4}{*}{fish vs. heads}
+% errors: fish|heads feat:image,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.97$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00\\ 
+% F1s: fish|heads feat:image,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.95$\pm$0.01& 0.94$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.96$\pm$0.01\\ \cline{2-9} 
+
+% errors: fish|heads feat:sdf,pf:0.0000,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00\\ 
+% F1s: fish|heads feat:sdf,pf:0.0000,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.95$\pm$0.01& 0.96$\pm$0.00& 0.95$\pm$0.01& 0.96$\pm$0.01& 0.95$\pm$0.01& 0.96$\pm$0.01\\ \cline{2-9} 
+
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\begin{table}
+\tiny
+\begin{center}
+\begin{tabular}{l|l|l|cc|cc|cc|}
+& & & \multicolumn{6}{c}{Results} \\ 
+& & & \multicolumn{6}{c}{Results} \\ 
+  & & & \multicolumn{2}{|c|}{$\sigma=0.1625 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.2750 \bar{d}$}
+       & \multicolumn{2}{|c|}{$\sigma=0.3875 \bar{d}$}\\ 
+& & & RLS & LapRLS & RLS. & LapRLS & RLS & LapRLS\\ \hline 
+\multirow{4}{*}{butterflies vs. crabs}
+% errors: butterflies|crabs feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.80$\pm$0.06& 0.80$\pm$0.07& 0.80$\pm$0.06& 0.80$\pm$0.07& 0.80$\pm$0.06& 0.80$\pm$0.07\\ 
+% F1s: butterflies|crabs feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.49$\pm$0.10& 0.40$\pm$0.06& 0.49$\pm$0.10& 0.40$\pm$0.06& 0.49$\pm$0.10& 0.40$\pm$0.06\\ \cline{2-9} 
+
+% errors: butterflies|crabs feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.85$\pm$0.07& 0.86$\pm$0.08& 0.85$\pm$0.07& 0.86$\pm$0.08& 0.85$\pm$0.07& 0.86$\pm$0.08\\ 
+% F1s: butterflies|crabs feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.55$\pm$0.14& 0.49$\pm$0.12& 0.55$\pm$0.14& 0.48$\pm$0.13& 0.55$\pm$0.14& 0.49$\pm$0.13\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. fish}
+% errors: butterflies|fish feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.92$\pm$0.04& 0.90$\pm$0.03& 0.92$\pm$0.04& 0.90$\pm$0.03& 0.92$\pm$0.04& 0.90$\pm$0.03\\ 
+% F1s: butterflies|fish feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.61$\pm$0.26& 0.59$\pm$0.24& 0.61$\pm$0.26& 0.59$\pm$0.24& 0.61$\pm$0.26& 0.59$\pm$0.23\\ \cline{2-9} 
+
+% errors: butterflies|fish feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02& 0.91$\pm$0.02\\ 
+% F1s: butterflies|fish feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.58$\pm$0.30& 0.64$\pm$0.15& 0.58$\pm$0.30& 0.64$\pm$0.15& 0.58$\pm$0.30& 0.64$\pm$0.15\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. heads}
+% errors: butterflies|heads feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00& 0.99$\pm$0.00\\ 
+% F1s: butterflies|heads feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.79$\pm$0.28& 0.77$\pm$0.21& 0.79$\pm$0.28& 0.77$\pm$0.21& 0.79$\pm$0.28& 0.77$\pm$0.22\\ \cline{2-9} 
+
+% errors: butterflies|heads feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.01& 1.00$\pm$0.00& 0.99$\pm$0.01& 1.00$\pm$0.00& 0.99$\pm$0.01& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.86$\pm$0.27& 0.75$\pm$0.20& 0.86$\pm$0.27& 0.76$\pm$0.19& 0.86$\pm$0.27& 0.76$\pm$0.19\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. fish}
+% errors: crabs|fish feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.71$\pm$0.15& 0.80$\pm$0.06& 0.71$\pm$0.15& 0.80$\pm$0.06& 0.71$\pm$0.15& 0.80$\pm$0.06\\ 
+% F1s: crabs|fish feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.35$\pm$0.15& 0.34$\pm$0.17& 0.35$\pm$0.15& 0.34$\pm$0.17& 0.35$\pm$0.15& 0.34$\pm$0.17\\ \cline{2-9} 
+
+% errors: crabs|fish feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.68$\pm$0.18& 0.80$\pm$0.06& 0.68$\pm$0.18& 0.80$\pm$0.06& 0.68$\pm$0.18& 0.80$\pm$0.06\\ 
+% F1s: crabs|fish feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.42$\pm$0.19& 0.43$\pm$0.20& 0.42$\pm$0.19& 0.43$\pm$0.21& 0.42$\pm$0.19& 0.43$\pm$0.21\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. heads}
+% errors: crabs|heads feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02& 0.93$\pm$0.02\\ 
+% F1s: crabs|heads feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.44$\pm$0.27& 0.39$\pm$0.19& 0.44$\pm$0.27& 0.39$\pm$0.19& 0.44$\pm$0.27& 0.39$\pm$0.19\\ \cline{2-9} 
+
+% errors: crabs|heads feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.01& 0.93$\pm$0.02& 0.94$\pm$0.01& 0.93$\pm$0.02& 0.94$\pm$0.01& 0.93$\pm$0.02\\ 
+% F1s: crabs|heads feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.54$\pm$0.36& 0.53$\pm$0.28& 0.54$\pm$0.36& 0.54$\pm$0.29& 0.54$\pm$0.36& 0.54$\pm$0.29\\ \cline{2-9} 
+
+\multirow{4}{*}{fish vs. heads}
+% errors: fish|heads feat:image,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.96$\pm$0.03& 0.97$\pm$0.01& 0.96$\pm$0.02& 0.97$\pm$0.01& 0.96$\pm$0.03\\ 
+% F1s: fish|heads feat:image,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.64$\pm$0.30& 0.75$\pm$0.29& 0.64$\pm$0.30& 0.75$\pm$0.29& 0.64$\pm$0.30& 0.75$\pm$0.29\\ \cline{2-9} 
+
+% errors: fish|heads feat:sdf,pf:0.3500,pl:0.1000
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01& 0.97$\pm$0.01\\ 
+% F1s: fish|heads feat:sdf,pf:0.3500,pl:0.1000
+& & \multirow{1}{*}{F1}& 0.65$\pm$0.30& 0.79$\pm$0.24& 0.65$\pm$0.30& 0.79$\pm$0.24& 0.65$\pm$0.30& 0.79$\pm$0.24\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. crabs}
+% errors: butterflies|crabs feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.82$\pm$0.03& 0.84$\pm$0.04& 0.82$\pm$0.03& 0.85$\pm$0.04& 0.82$\pm$0.03& 0.86$\pm$0.04\\ 
+% F1s: butterflies|crabs feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.47$\pm$0.11& 0.52$\pm$0.17& 0.47$\pm$0.11& 0.52$\pm$0.17& 0.47$\pm$0.11& 0.53$\pm$0.16\\ \cline{2-9} 
+
+% errors: butterflies|crabs feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.90$\pm$0.01& 0.91$\pm$0.03& 0.90$\pm$0.01& 0.91$\pm$0.03& 0.90$\pm$0.01& 0.91$\pm$0.02\\ 
+% F1s: butterflies|crabs feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.52$\pm$0.11& 0.66$\pm$0.12& 0.52$\pm$0.11& 0.66$\pm$0.12& 0.52$\pm$0.11& 0.67$\pm$0.14\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. fish}
+% errors: butterflies|fish feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.93$\pm$0.03& 0.92$\pm$0.05& 0.93$\pm$0.03& 0.92$\pm$0.05& 0.93$\pm$0.03& 0.92$\pm$0.05\\ 
+% F1s: butterflies|fish feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.65$\pm$0.24& 0.64$\pm$0.18& 0.65$\pm$0.24& 0.64$\pm$0.18& 0.65$\pm$0.24& 0.64$\pm$0.18\\ \cline{2-9} 
+
+% errors: butterflies|fish feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.02& 0.94$\pm$0.03& 0.94$\pm$0.02& 0.94$\pm$0.03& 0.94$\pm$0.02& 0.94$\pm$0.03\\ 
+% F1s: butterflies|fish feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.68$\pm$0.20& 0.70$\pm$0.14& 0.68$\pm$0.20& 0.70$\pm$0.13& 0.68$\pm$0.20& 0.70$\pm$0.13\\ \cline{2-9} 
+
+\multirow{4}{*}{butterflies vs. heads}
+% errors: butterflies|heads feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.99$\pm$0.00& 1.00$\pm$0.00& 0.99$\pm$0.00& 1.00$\pm$0.00& 0.99$\pm$0.00& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.84$\pm$0.10& 0.91$\pm$0.15& 0.84$\pm$0.10& 0.91$\pm$0.15& 0.84$\pm$0.10& 0.91$\pm$0.14\\ \cline{2-9} 
+
+% errors: butterflies|heads feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00& 1.00$\pm$0.00\\ 
+% F1s: butterflies|heads feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.85$\pm$0.12& 0.90$\pm$0.15& 0.85$\pm$0.12& 0.90$\pm$0.15& 0.85$\pm$0.12& 0.90$\pm$0.15\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. fish}
+% errors: crabs|fish feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.78$\pm$0.05& 0.82$\pm$0.04& 0.78$\pm$0.05& 0.82$\pm$0.04& 0.78$\pm$0.05& 0.82$\pm$0.04\\ 
+% F1s: crabs|fish feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.43$\pm$0.11& 0.42$\pm$0.12& 0.43$\pm$0.11& 0.42$\pm$0.12& 0.43$\pm$0.11& 0.42$\pm$0.12\\ \cline{2-9} 
+
+% errors: crabs|fish feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.77$\pm$0.09& 0.83$\pm$0.07& 0.77$\pm$0.09& 0.83$\pm$0.07& 0.77$\pm$0.09& 0.83$\pm$0.07\\ 
+% F1s: crabs|fish feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.49$\pm$0.14& 0.44$\pm$0.16& 0.49$\pm$0.14& 0.44$\pm$0.16& 0.49$\pm$0.14& 0.44$\pm$0.16\\ \cline{2-9} 
+
+\multirow{4}{*}{crabs vs. heads}
+% errors: crabs|heads feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.94$\pm$0.02& 0.94$\pm$0.01& 0.94$\pm$0.02& 0.94$\pm$0.01& 0.94$\pm$0.02& 0.95$\pm$0.01\\ 
+% F1s: crabs|heads feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.58$\pm$0.09& 0.57$\pm$0.19& 0.58$\pm$0.09& 0.57$\pm$0.19& 0.58$\pm$0.09& 0.58$\pm$0.20\\ \cline{2-9} 
+
+% errors: crabs|heads feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01& 0.95$\pm$0.01\\ 
+% F1s: crabs|heads feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.67$\pm$0.15& 0.61$\pm$0.20& 0.67$\pm$0.15& 0.62$\pm$0.21& 0.67$\pm$0.15& 0.63$\pm$0.22\\ \cline{2-9} 
+
+\multirow{4}{*}{fish vs. heads}
+% errors: fish|heads feat:image,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{image} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.97$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00\\ 
+% F1s: fish|heads feat:image,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.88$\pm$0.18& 0.94$\pm$0.03& 0.88$\pm$0.18& 0.95$\pm$0.04& 0.88$\pm$0.18& 0.96$\pm$0.04\\ \cline{2-9} 
+
+% errors: fish|heads feat:sdf,pf:0.3500,pl:0.2500
+& \multirow{2}{*}{sdf} & \multirow{1}{*}{Accuracy}& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00& 0.97$\pm$0.01& 0.98$\pm$0.00\\ 
+% F1s: fish|heads feat:sdf,pf:0.3500,pl:0.2500
+& & \multirow{1}{*}{F1}& 0.89$\pm$0.16& 0.96$\pm$0.02& 0.89$\pm$0.16& 0.96$\pm$0.02& 0.89$\pm$0.16& 0.96$\pm$0.02\\ \cline{2-9} 
+
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\subsection{}
+
+\section{Discussion}
+
+\subsection{Imbalanced Data}
+
+Some of the datasets we had an imbalanced number of positive and negative examples. Imbalanced data
+
+%\bibliography{yourbibfile}
+
+\end{document}

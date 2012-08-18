@@ -1,0 +1,22 @@
+function [f,error,F1]=shape_knn(X,Y,p_flip,p_labeled)
+
+% Choose which points are labeled, and flip some o
+
+i_labeled=rand(numel(Y),1)<p_labeled;
+n_pos_labeled=sum(Y>0);
+n_neg_labeled=sum(Y<=0);
+if n_pos_labeled>n_neg_labeled
+  p_pos_labeled=n_neg_labeled/n_pos_labeled;
+  i_labeled(Y>0)=i_labeled(Y>0)&(rand(n_pos_labeled,1)<p_pos_labeled);
+else
+  p_neg_labeled=n_pos_labeled/n_neg_labeled;
+  i_labeled(Y<=0)=i_labeled(Y<=0)&(rand(n_neg_labeled,1)<p_neg_labeled);
+end
+
+u=sum(~i_labeled);
+l=sum(i_labeled);
+Y=[Y(i_labeled);Y(~i_labeled)];
+X=[X(i_labeled,:);X(~i_labeled,:)];
+L=[L(i_labeled,i_labeled),L(i_labeled,~i_labeled);L(~i_labeled,i_labeled),L(~i_labeled,~i_labeled)];
+Yl=Y(1:l);
+Yl=Yl.*(1-2*double(rand(l,1)<p_flip));
