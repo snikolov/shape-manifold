@@ -1,11 +1,11 @@
 % Test shape graph regularization
 
-setnames={'butterflies','crabs','fish','heads'};
-p_flips=[0,0.35];
-p_labeleds=[0.10,0.25];
+setnames={'butterflies_bal','fish_bal','heads_bal','dogs_bal'};
+p_flips=[0];
+p_labeleds=[0.05,0.10,0.25];
 feature_types={'image','sdf'};
 modes={'unregularized','regularized'};
-sigma_weights=linspace(0.05,0.5,5);
+sigma_weights=linspace(0.05,0.75,5);
 
 %setnames={'fish','butterflies'};
 %p_flips=[0];
@@ -13,6 +13,8 @@ sigma_weights=linspace(0.05,0.5,5);
 %feature_types={'image'};
 %modes={'unregularized'};
 %sigma_weights=linspace(0.05,0.5,5);
+
+outf = fopen('../results/graph_reg.txt', 'w')
 
 n_trials=8;
 errors=zeros(numel(feature_types), ...
@@ -32,7 +34,7 @@ for ifeatures=1:numel(feature_types)
     dataset1=load(['../',setname1,'.mat'],'data');
     for k=j+1:numel(setnames)
       setname2=setnames{k};
-      fprintf('%s vs %s | %s features\n',setname1,setname2,feature_type);
+      %fprintf('%s vs %s | %s features\n',setname1,setname2,feature_type);
       dataset2=load(['../',setname2,'.mat'],'data');
       if strcmpi(feature_type,'image')
         data1=dataset1.data.images;
@@ -94,9 +96,12 @@ for ifeatures=1:numel(feature_types)
                 F1s(ifeatures,j,k,isigma,imode,ipflip,iplabeled,itrial)=F1;
                 F1s(ifeatures,k,j,isigma,imode,ipflip,iplabeled,itrial)=F1;
               end
-              fprintf('Mean accuracy: %.4f\nstd: %.4f\n', ...
+              fprintf(outf, '%s\t%s\t%s\t%.4f\t%s\t%.4f\t%.4f\t%.4f\t%.4f\n', ...
+                  setname1, setname2, feature_types{ifeatures}, sigma_weights(isigma), modes{imode}, ... 
+                  p_flips(ipflip), p_labeleds(iplabeled), ...
                   1-mean(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)), ...
-                  std(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)))
+                  std(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)));
+                  
               % pause;
               
   %             subplot(3,2,(j-1)*numel(p_labeled)+k-1);

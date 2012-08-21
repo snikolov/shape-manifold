@@ -8,14 +8,16 @@ function test_shape_lap_rls
 % modes={'A_regularized','AI_regularized'};
 % sigma_weights=linspace(0.05,0.5,5);
 
-setnames={'butterflies','crabs','fish','heads'};
-p_flips=[0.35];
-p_labeleds=[0.10,0.25];
+setnames={'butterflies_bal','fish_bal','heads_bal','dogs_bal'};
+p_flips=[0.2];
+p_labeleds=[0.05];
 feature_types={'image','sdf'};
-modes={'A_regularized','AI_regularized'};
-sigma_weights=linspace(0.1625,0.3875,3);
+modes={'AI_regularized'};
+%modes={'unregularized'};
+%sigma_weights=linspace(0.5, 1.5, 5);
+sigma_weights=[0.6];
 
-n_trials=8;
+n_trials=1;
 errors=zeros(numel(feature_types), ...
     numel(setnames), ...
     numel(setnames), ...
@@ -25,6 +27,15 @@ errors=zeros(numel(feature_types), ...
     numel(p_labeleds), ...
     n_trials);
 F1s=zeros(size(errors));
+
+write_mat = 0;
+write_txt = 0;
+
+base_name = 'lap_rls_pf_0_sigma_0.5_1.5_ksigma_1_unreg';
+
+if write_txt
+  outf = fopen(['../', base_name, '.txt'], 'w');
+end
 
 for ifeatures=1:numel(feature_types)
   feature_type=feature_types{ifeatures};
@@ -63,6 +74,10 @@ for ifeatures=1:numel(feature_types)
       
       for isigma=1:numel(sigma_weights)
         sigma_weight=sigma_weights(isigma);
+        
+        %fprintf('sigma_weight = %.4f', sigma_weight);
+        %pause;
+        
         % Precompute Laplacian
         D=squareform(pdist(X));
         n_neighbors=N-1;
@@ -96,9 +111,18 @@ for ifeatures=1:numel(feature_types)
                 F1s(ifeatures,j,k,isigma,imode,ipflip,iplabeled,itrial)=F1;
                 F1s(ifeatures,k,j,isigma,imode,ipflip,iplabeled,itrial)=F1;
               end
-              fprintf('Mean accuracy: %.4f\nstd: %.4f\n', ...
-                  1-mean(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)), ...
-                  std(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)))
+              if write_txt
+                fprintf(outf, '%s\t%s\t%s\t%.4f\t%s\t%.4f\t%.4f\t%.4f\t%.4f\n', ...
+                    setname1, setname2, feature_types{ifeatures}, sigma_weights(isigma), modes{imode}, ... 
+                    p_flips(ipflip), p_labeleds(iplabeled), ...
+                    1-mean(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)), ...
+                    std(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)));
+              end
+              fprintf('%s\t%s\t%s\t%.4f\t%s\t%.4f\t%.4f\t%.4f\t%.4f\n', ...
+                    setname1, setname2, feature_types{ifeatures}, sigma_weights(isigma), modes{imode}, ... 
+                    p_flips(ipflip), p_labeleds(iplabeled), ...
+                    1-mean(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)), ...
+                    std(errors(ifeatures,j,k,isigma,imode,ipflip,iplabeled,:)));
             end
           end
         end
@@ -106,4 +130,7 @@ for ifeatures=1:numel(feature_types)
     end
   end
 end
-save('../errors_lap_rls_pf35.mat','errors','F1s','sigma_weights','feature_types','modes','p_flips','p_labeleds','setnames');
+if write_mat
+  save(['../', base_name, '.mat'], 'errors', 'F1s', 'sigma_weights', ...
+      'feature_types','modes','p_flips','p_labeleds','setnames');
+end

@@ -68,7 +68,9 @@ for k=1:1:10
   end
 end
 
-if 
+if isempty(best_k)
+  best_k = 1;
+end
 % Compute error on test set using best K
 f = knnclassify(Xtest, Xltrain, Yltrain, best_k);
 error=mean(f~=Ytest);

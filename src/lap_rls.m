@@ -1,4 +1,4 @@
-function [f,error]=lap_rls(X,L,Yl,Y,K,lambdaA,lambdaI)
+function [c,error]=lap_rls(X,L,Yl,Y,K,lambdaA,lambdaI)
 global l m u
 
 m=size(X,1);
@@ -20,7 +20,7 @@ u=m-l;
 J=[diag(ones(l,1)), zeros(l,u); zeros(u,l), zeros(u,u)];
 Ytrunc=[Yl;zeros(u,1)];
 c=(J*K+lambdaA*l*eye(m)+lambdaI*(l^2/m^2)*L*K)\Ytrunc;
-    
+
 function cverr=cverrForLambda(X,L,Y,K,lambdaA,lambdaI)
 global l u
 % Do k-fold crossvalidation

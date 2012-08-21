@@ -1,6 +1,6 @@
 function [f,error,F1]=shape_lap_rls(X,L,Y,p_flip,p_labeled,mode)
 
-PLOT=0;
+PLOT=1;
 
 % Split into training and test sets.
 itest=rand(numel(Y),1)<0.25;
@@ -42,7 +42,8 @@ lambda_max=eigvalK(end,end);
 if strcmpi(mode,'unregularized')
   [c,error]=lap_rls(Xtrain,Ltrain,Yltrain,Ytrain,K_train_train,0,0);
 elseif strcmpi(mode,'A_regularized')
-  lambdaAs=exp(linspace(0,3,5))-1;
+  %lambdaAs=exp(linspace(0,3,25))-1;
+  lambdaAs=linspace(0, lambda_max, 20);
   errors=zeros(numel(lambdaAs),1);
   min_error=Inf;
   best_lambdaA=[];
@@ -92,6 +93,15 @@ elseif strcmpi(mode,'AI_regularized')
   end
   error=min_error;
 end
+
+lambda_max
+if exist('best_lambdaA', 'var')
+  best_lambdaA
+end
+if exist('best_lambdaI', 'var')
+  best_lambdaI
+end
+ 
 
 K_test_train=kernel_mat(Xtest,Xtrain);
 f=K_test_train*c;

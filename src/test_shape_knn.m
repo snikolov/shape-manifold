@@ -1,16 +1,11 @@
-function test_shape_knn_transduction
+function test_shape_knn
 
 setnames={'butterflies_bal','fish_bal','heads_bal','dogs_bal'};
-p_flips=[0];
-p_labeleds=[0.10,0.25];
+p_flips=[0.2];
+p_labeleds=[0.05,0.25];
 feature_types={'image','sdf'};
 
-% setnames={'bugs','female_heads','butterflies1'};
-% p_flips=[0.05,0.10,0.15];
-% p_labeleds=[0.10,0.30,0.50,0.75];
-% feature_types={'image','sdf'};
-% modes={'unregularized','regularized'};
-n_trials=8;
+n_trials=5;
 errors=zeros(numel(feature_types), ...
     numel(setnames), ...
     numel(setnames), ...
@@ -18,6 +13,13 @@ errors=zeros(numel(feature_types), ...
     numel(p_labeleds), ...
     n_trials);
 F1s=zeros(size(errors));
+
+write_mat = 1;
+write_txt = 1;
+
+base_name = 'knn_ks_1_10';
+
+outf = fopen(['../', base_name, '.txt'], 'w');
 
 for ifeatures=1:numel(feature_types)
   feature_type=feature_types{ifeatures};
@@ -59,18 +61,24 @@ for ifeatures=1:numel(feature_types)
           p_labeled=p_labeleds(iplabeled);
           rng('default');
           for itrial=1:n_trials
-            [f,error,F1]=shape_knn_transduction(X,Y,p_flip,p_labeled);
+            [f,error,F1]=shape_knn(X,Y,p_flip,p_labeled);
             errors(ifeatures,j,k,ipflip,iplabeled,itrial)=error;
             errors(ifeatures,k,j,ipflip,iplabeled,itrial)=error;
             F1s(ifeatures,j,k,ipflip,iplabeled,itrial)=F1;
             F1s(ifeatures,k,j,ipflip,iplabeled,itrial)=F1;
           end
-          fprintf('Mean accuracy: %.4f\nstd: %.4f\n', ...
-                 1-mean(errors(ifeatures,j,k,ipflip,iplabeled,:)), ...
-                 std(errors(ifeatures,j,k,ipflip,iplabeled,:)))
+          if write_txt
+            fprintf(outf, '%s\t%s\t%s\t%.4f\t%.4f\t%.4f\t%.4f\n', ...
+                    setname1, setname2, feature_types{ifeatures}, ... 
+                    p_flips(ipflip), p_labeleds(iplabeled), ...
+                    1-mean(errors(ifeatures,j,k,ipflip,iplabeled,:)), ...
+                    std(errors(ifeatures,j,k,ipflip,iplabeled,:)));
+          end
         end
       end
     end
   end
 end
-save('../errors_knn.mat','F1','errors','feature_types','p_flips','p_labeleds','setnames');
+if write_mat
+  save(['../', base_name, '.mat'],'F1','errors','feature_types','p_flips','p_labeleds','setnames');
+end

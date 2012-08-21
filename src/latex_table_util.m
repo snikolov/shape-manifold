@@ -1,8 +1,8 @@
 % Write out latex tables
 
-load '../errors_lap_rls_pf35.mat';
+load '../errors_lap_rls.mat';
 
-f=fopen('../error_shape_reg.txt','w');
+f=fopen('../errors_lap_rls.txt','w');
 
 fprintf(f,'\\begin{table}\n');
 fprintf(f,'\\tiny\n');
