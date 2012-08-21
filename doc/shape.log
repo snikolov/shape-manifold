@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  20 AUG 2012 23:46
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  20 AUG 2012 23:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -438,7 +438,7 @@ verted-to.pdf fig/example_shapes.eps>
 (epstopdf)             \includegraphics on input line 185.
 Package epstopdf Info: Output file is already uptodate.
 
-<fig/example_shapes-eps-converted-to.pdf, id=146, 884.30376pt x 178.6675pt>
+<fig/example_shapes-eps-converted-to.pdf, id=147, 884.30376pt x 178.6675pt>
 File: fig/example_shapes-eps-converted-to.pdf Graphic file (type pdf)
 
 <use fig/example_shapes-eps-converted-to.pdf>
@@ -460,7 +460,7 @@ Package epstopdf Info: Source file: <fig/bin_vs_sdf.eps>
 ed-to.pdf fig/bin_vs_sdf.eps>
 (epstopdf)             \includegraphics on input line 215.
 Package epstopdf Info: Output file is already uptodate.
-<fig/bin_vs_sdf-eps-converted-to.pdf, id=153, 527.9725pt x 250.9375pt>
+<fig/bin_vs_sdf-eps-converted-to.pdf, id=154, 527.9725pt x 250.9375pt>
 File: fig/bin_vs_sdf-eps-converted-to.pdf Graphic file (type pdf)
 
 <use fig/bin_vs_sdf-eps-converted-to.pdf>
@@ -479,7 +479,7 @@ o.pdf fig/laprls.eps>
 (epstopdf)             \includegraphics on input line 237.
 Package epstopdf Info: Output file is already uptodate.
 
-<fig/laprls-eps-converted-to.pdf, id=169, 522.95375pt x 436.63126pt>
+<fig/laprls-eps-converted-to.pdf, id=170, 522.95375pt x 436.63126pt>
 File: fig/laprls-eps-converted-to.pdf Graphic file (type pdf)
 
 <use fig/laprls-eps-converted-to.pdf>
@@ -587,10 +587,10 @@ e/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive
 011/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/201
 1/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2011
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on shape.pdf (10 pages, 289687 bytes).
+Output written on shape.pdf (10 pages, 289662 bytes).
 PDF statistics:
- 313 PDF objects out of 1000 (max. 8388607)
- 271 compressed objects within 3 object streams
+ 314 PDF objects out of 1000 (max. 8388607)
+ 272 compressed objects within 3 object streams
  54 named destinations out of 1000 (max. 500000)
  176 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -94,9 +94,9 @@ could help with early detection of disease.
 
 % Manifold
 Recently, geometric frameworks for learning such as manifold learning and
-manifold regularization \cite{Belkin1}\cite{Belkin2}\cite{Belkin3} have become a
+manifold regularization (\cite{Belkin1}, \cite{Belkin2}, \cite{Belkin3}) have become a
 popular approach to image and shape classification
-\cite{sdf}\cite{Tuzel}\cite{Zhu}\cite{Gong}. It is well known that the space of
+(\cite{sdf}, \cite{Tuzel}, \cite{Zhu}, \cite{Gong}). It is well known that the space of
 shapes has the structure of a low-dimensional manifold (see for example
 \cite{Haykin}, Chapter 1. The idea is that the raw pixels of an image form a
 feature vector in a high-dimensional space, but around each feature vector, the
@@ -132,7 +132,7 @@ c$ and setting it to zero. This yields
 \end{gather}
 
 Manifold regularization uses the unlabeled points in addition to the labeled points in
-order to exploit the geometry of the data \cite{Belkin1}\cite{Belkin2}\cite{Belkin3}. Namely, it enforces the notion
+order to exploit the geometry of the data (\cite{Belkin1}, \cite{Belkin2}, \cite{Belkin3}). Namely, it enforces the notion
 that $f$ should not vary drastically in regions of high density. This idea
 is captured formally by defining an intrinsic smoothness penalty on
 $f$ \[\|f\|^2_{I} = \int_{\mathcal{M}} \|\nabla_{\mathcal{M}} f(x)\|^2 dp(\mb x)
@@ -203,7 +203,7 @@ dimensionality, each feature representation is scaled down.
 A {\em signed distance function} (SDF) is an object that implicitly defines a
 partition of a space into (possibly multiply-connected) inside and outside
 regions. Signed distance functions are widely used in computer vision to
-represent shapes (see for example \cite{sdf}\cite{Tsai1}\cite{Tsai2}. In our case, the space is a plane,
+represent shapes (see for example \cite{sdf}, \cite{Tsai1}, \cite{Tsai2}). In our case, the space is a plane,
 and the boundary between the inside and outside regions can be thought of as a
 shape. SDFs take in a point $\mb{x}$ (e.g. in the plane) and give the {\em
   signed distance} to the closest point on the boundary. If $\mb{x}$ is in the
